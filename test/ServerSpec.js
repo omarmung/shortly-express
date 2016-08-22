@@ -108,7 +108,8 @@ describe('', function() {
         'followAllRedirects': true,
         'uri': 'http://127.0.0.1:4568/links',
         'json': {
-          'url': 'http://roflzoo.com/'
+          'url': 'http://roflzoo.com/',
+          'title': 'Funny pictures of animals, funny dog pictures'
         }
       };
 

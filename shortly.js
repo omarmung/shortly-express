@@ -109,18 +109,26 @@ app.post('/login', function(req, res) {
   var username = req.body.username;
   var password = req.body.password;
   
-  var salt = bcrypt.genSaltSync(10);
-  var hash = bcrypt.hashSync(password, salt);
+ //  var salt = bcrypt.genSaltSync(10);
+  
+
 
   new User({ username: username }).fetch().then(function(found) {
     if (found) {
-      req.session.regenerate(function() {
-        req.session.user = found.attributes.username;
-        res.status(200).redirect('/'); 
-      });
+      var salt = found.attributes.salt;
+      var hash = bcrypt.hashSync(password, salt);
+      var hashedPass = found.attributes.password;
+      if (hash === hashedPass) {
+        req.session.regenerate(function() {
+          req.session.user = found.attributes.username;
+          res.status(200).redirect('/'); 
+        });
+      } else {
+        res.setHeader('location', '/login');
+        return res.sendStatus(200);
+      }
     } else {
-      console.log(username, 'was not found. hopefully saays fred');
-      res.setHeader('location', '/login');
+      res.redirect('/signup');
       return res.sendStatus(200);
     }
   });
@@ -156,7 +164,8 @@ app.post('/signup', function(req, res) {
     } else {
       Users.create({
         username: username,
-        password: password
+        password: hash,
+        salt: salt
       })
       .then(function(newUser) {
         res.status(200).redirect('/');

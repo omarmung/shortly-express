@@ -10,10 +10,7 @@ var Links = require('./app/collections/links');
 var Link = require('./app/models/link');
 var Click = require('./app/models/click');
 
-// Things we required
-// From http://www.9bitstudios.com/2013/09/express-js-authentication/
-// var cookie = require('./node_modules/cookie-parser');
-// var bcrypt = require('./node_modules/bcrypt');
+var bcrypt = require('bcrypt');
 var session = require('express-session');
 
 var app = express();
@@ -30,12 +27,12 @@ app.use(express.static(__dirname + '/public'));
 app.use(session({
   secret: 'keyboard cat',
   resave: false,
+  name: 'sessionId',
   saveUninitialized: true,
   cookie: { 
     secure: false 
   }
 }));
-
 
 var restrict = function(req, res, next) {
   if (req.session.user) {
@@ -45,7 +42,6 @@ var restrict = function(req, res, next) {
     res.redirect('/login');
   }
 };
-
 
 app.get('/', 
 function(req, res) {
@@ -59,6 +55,10 @@ function(req, res) {
   restrict(req, res, function() {
     res.render('index');
   });
+});
+
+app.get('/signup', function(req, res) {
+  res.render('signup');
 });
 
 app.get('/links', 
@@ -106,11 +106,25 @@ function(req, res) {
 // Write your authentication routes here
 /************************************************************/
 app.post('/login', function(req, res) {
-  var username = req.body.username; // req.body.username; ?
-  var password = req.body.password; // req.body.password; ?
-  res.sendStatus(200);
-  // var salt = bcrypt.genSaltSync(10);
-  // var hash = bcrypt.hashSync(password, salt);
+  var username = req.body.username;
+  var password = req.body.password;
+  
+  var salt = bcrypt.genSaltSync(10);
+  var hash = bcrypt.hashSync(password, salt);
+
+  new User({ username: username }).fetch().then(function(found) {
+    if (found) {
+      req.session.regenerate(function() {
+        req.session.user = found.attributes.username;
+        res.status(200).redirect('/'); 
+      });
+    } else {
+      console.log(username, 'was not found. hopefully saays fred');
+      res.setHeader('location', '/login');
+      return res.sendStatus(200);
+    }
+  });
+
   // var userObj = db.users.findOne({ username: username, password: hash });
   // if (userObj) {
   //   req.session.regenerate(function() {
@@ -122,17 +136,41 @@ app.post('/login', function(req, res) {
   // }
 });
 
-// from http://www.9bitstudios.com/2013/09/express-js-authentication/
-// app.get('/login', function(req, res) {
-//   res.send('<some html stuff />');
-// });
+app.get('/login', function(req, res) {
+  res.render('login');
+  res.end(200);
+});
 
-// from http://www.9bitstudios.com/2013/09/express-js-authentication/
-// app.post('/logout', function(req, res) {
-//   request.session.destroy(function() {
-//     res.redirect('/');
-//   });
-// });
+app.post('/signup', function(req, res) {
+  var username = req.body.username;
+  var password = req.body.password;
+
+  var salt = bcrypt.genSaltSync(10);
+  var hash = bcrypt.hashSync(password, salt);
+
+  new User({ username: username }).fetch().then(function(found) {
+    if (found) {
+      // User already found in DB.
+      // TODO: throw error, user already exists
+      res.status(200).send(found.attributes);
+    } else {
+      Users.create({
+        username: username,
+        password: password
+      })
+      .then(function(newUser) {
+        res.status(200).redirect('/');
+      });
+    }
+  });
+});
+
+app.post('/logout', function(req, res) {
+  req.session.destroy(function() {
+    res.redirect('/');
+  });
+});
+
 
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail

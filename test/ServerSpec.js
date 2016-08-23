@@ -239,7 +239,7 @@ describe('', function() {
 
   }); // 'Priviledged Access'
 
-  xdescribe('Account Creation:', function() {
+  describe('Account Creation:', function() {
 
     it('Signup creates a user record', function(done) {
       var options = {
@@ -287,7 +287,7 @@ describe('', function() {
 
   }); // 'Account Creation'
 
-  xdescribe('Account Login:', function() {
+  describe('Account Login:', function() {
 
     var requestWithSession = request.defaults({jar: true});
 
@@ -327,6 +327,7 @@ describe('', function() {
       };
 
       requestWithSession(options, function(error, res, body) {
+        console.log(res.headers);
         expect(res.headers.location).to.equal('/login');
         done();
       });

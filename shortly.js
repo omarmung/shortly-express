@@ -3,13 +3,17 @@ var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
 
-
 var db = require('./app/config');
 var Users = require('./app/collections/users');
 var User = require('./app/models/user');
 var Links = require('./app/collections/links');
 var Link = require('./app/models/link');
 var Click = require('./app/models/click');
+
+// Things we required
+// From http://www.9bitstudios.com/2013/09/express-js-authentication/
+// var cookie = require('./node_modules/cookie-parser');
+// var bcrypt = require('./node_modules/bcrypt');
 
 var app = express();
 
@@ -21,6 +25,17 @@ app.use(bodyParser.json());
 // Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
+
+// app.use(cookie.cookieParser('very secret'));
+
+// function(req, res, next) {
+//   if (req.session.user) {
+//     next();
+//   } else {
+//     req.session.error = 'Access denied!';
+//     res.redirect('/login');
+//   }
+// }
 
 
 app.get('/', 
@@ -75,8 +90,36 @@ function(req, res) {
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
+app.post('/login', function(req, res) {
+  var username = req.body.username; // req.body.username; ?
+  var password = req.body.password; // req.body.password; ?
+  res.sendStatus(200);
+  
+  // from http://www.9bitstudios.com/2013/09/express-js-authentication/
+  // var salt = bcrypt.genSaltSync(10);
+  // var hash = bcrypt.hashSync(password, salt);
+  // var userObj = db.users.findOne({ username: username, password: hash });
+  // if (userObj) {
+  //   req.session.regenerate(function() {
+  //     req.session.user = userObj.username;
+  //     res.redirect('/restricted'); // example restricted route?
+  //   });
+  // } else {
+  //   res.redirect('login');
+  // }
+});
 
+// from http://www.9bitstudios.com/2013/09/express-js-authentication/
+app.get('/login', function(req, res) {
+  res.send('<some html stuff />');
+});
 
+// from http://www.9bitstudios.com/2013/09/express-js-authentication/
+app.post('/logout', function(req, res) {
+  request.session.destroy(function() {
+    res.redirect('/');
+  });
+});
 
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail

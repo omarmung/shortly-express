@@ -14,6 +14,7 @@ var Click = require('./app/models/click');
 // From http://www.9bitstudios.com/2013/09/express-js-authentication/
 // var cookie = require('./node_modules/cookie-parser');
 // var bcrypt = require('./node_modules/bcrypt');
+var session = require('express-session');
 
 var app = express();
 
@@ -26,32 +27,46 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
-// app.use(cookie.cookieParser('very secret'));
+app.use(session({
+  secret: 'keyboard cat',
+  resave: false,
+  saveUninitialized: true,
+  cookie: { 
+    secure: false 
+  }
+}));
 
-// function(req, res, next) {
-//   if (req.session.user) {
-//     next();
-//   } else {
-//     req.session.error = 'Access denied!';
-//     res.redirect('/login');
-//   }
-// }
+
+var restrict = function(req, res, next) {
+  if (req.session.user) {
+    next();
+  } else {
+    req.session.error = 'Access denied!';
+    res.redirect('/login');
+  }
+};
 
 
 app.get('/', 
 function(req, res) {
-  res.render('index');
+  restrict(req, res, function() {
+    res.render('index'); 
+  });
 });
 
 app.get('/create', 
 function(req, res) {
-  res.render('index');
+  restrict(req, res, function() {
+    res.render('index');
+  });
 });
 
 app.get('/links', 
 function(req, res) {
-  Links.reset().fetch().then(function(links) {
-    res.status(200).send(links.models);
+  restrict(req, res, function() {
+    Links.reset().fetch().then(function(links) {
+      res.status(200).send(links.models);
+    });
   });
 });
 
@@ -94,8 +109,6 @@ app.post('/login', function(req, res) {
   var username = req.body.username; // req.body.username; ?
   var password = req.body.password; // req.body.password; ?
   res.sendStatus(200);
-  
-  // from http://www.9bitstudios.com/2013/09/express-js-authentication/
   // var salt = bcrypt.genSaltSync(10);
   // var hash = bcrypt.hashSync(password, salt);
   // var userObj = db.users.findOne({ username: username, password: hash });
@@ -110,16 +123,16 @@ app.post('/login', function(req, res) {
 });
 
 // from http://www.9bitstudios.com/2013/09/express-js-authentication/
-app.get('/login', function(req, res) {
-  res.send('<some html stuff />');
-});
+// app.get('/login', function(req, res) {
+//   res.send('<some html stuff />');
+// });
 
 // from http://www.9bitstudios.com/2013/09/express-js-authentication/
-app.post('/logout', function(req, res) {
-  request.session.destroy(function() {
-    res.redirect('/');
-  });
-});
+// app.post('/logout', function(req, res) {
+//   request.session.destroy(function() {
+//     res.redirect('/');
+//   });
+// });
 
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
